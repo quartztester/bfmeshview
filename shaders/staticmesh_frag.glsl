@@ -7,17 +7,22 @@ uniform sampler2D texture3; // crack
 uniform sampler2D texture4; // detailN
 uniform sampler2D texture5; // crackN
 
+uniform int gamma;
+uniform int matcap;
 //uniform int hasBump;
 uniform int hasAlpha;
+uniform int hasDetail;
 uniform int hasDirt;
 uniform int hasCrack;
 uniform int hasCrackN;
 uniform int hasDetailN;
 uniform int showDiffuse;
+uniform int showSpecular;
 uniform int showLighting;
 
-//uniform vec3 sunambient;
-//uniform vec3 sundiffuse;
+uniform vec3 suncolor;
+uniform vec3 skycolor;
+uniform vec3 ambient;
 
 varying vec2 uv0;
 varying vec2 uv1;
@@ -25,6 +30,7 @@ varying vec2 uv2;
 varying vec2 uv3;
 varying vec2 uv4;
 varying vec3 norm;
+varying vec3 upvec;
 varying vec3 sunvec;
 varying vec3 eyesurfvec;         // eye to surface vector
 
@@ -33,12 +39,6 @@ varying vec3 fragpos;
 
 void main()
 {
- //// temp: pass as uniforms
- vec3 sunambient = vec3(0.3,0.3,0.3);
- vec3 sundiffuse = vec3(0.7,0.7,0.7);
- vec3 sunspecular = sundiffuse;
- //// temp
- 
  // base
  vec4 frag = vec4(1.0, 1.0, 1.0, 1.0);
  vec3 spec = vec3(1.0, 1.0, 1.0);
@@ -71,9 +71,11 @@ void main()
  // diffuse
  if (showDiffuse > 0) {
   frag *= basemap;
-  frag *= detailmap;
+  if (hasDetail > 0) {
+   frag *= detailmap;
+  }
  } else {
-  frag.rgb *= 0.75;
+  frag.rgb *= 0.666;
  }
  
  // alpha
@@ -115,24 +117,55 @@ void main()
  
  // lighting
  if (showLighting > 0) {
+	 float updot = dot(n,normalize(upvec));
   float NdotL = dot(n,normalize(-sunvec));
-  frag.rgb *= sunambient.rgb + sundiffuse.rgb * max(NdotL,0.0);
+		if (gamma > 0) NdotL = 1.0 - pow(1.0 - NdotL, 2.2);
+  frag.rgb *= mix(ambient, skycolor, updot*0.5+0.5) + suncolor * max(NdotL,0.0);
   
   // specular
-  if (NdotL > 0.0) {
+  //if (NdotL > 0.0) {
    
+			if (showSpecular == 0) spec = vec3(1.0);
+			
    // half vector
-   vec3 hv = normalize( -sunvec + eyesurfvec );
+   vec3 hv = normalize( normalize(-sunvec) + normalize(eyesurfvec) );
    
    // compute specular amount
    float NdotHV = max(dot(n,hv),0.0);
    spec *= pow(NdotHV,100.0);
    
    // apply specular
-   frag.rgb += sunspecular * spec;
-  }
+   frag.rgb += suncolor * spec;
+  //}
  }
- 
+	
+	// matcap
+	if (matcap > 0) {
+		vec3 btm = vec3( 92.0,  19.0,   2.0)/255.0;
+		vec3 top = vec3(131.0,  62.0,  47.0)/255.0;
+		vec3 ctr = vec3(138.0,  42.0,  20.0)/255.0;
+		vec3 hlt = vec3(209.0, 156.0, 162.0)/255.0;
+		
+		//vec3 reflected = reflect(normalize( eyepos - fragpos ), vertNorm);
+  //float m = 2.8284271247461903 * sqrt( reflected.z+1.0 ); //sqrt(8.0)
+  //vec2 q = reflected.xy / m + 0.5;
+		
+		vec2 q = reflect( normalize(eyesurfvec), normalize(n) ).xy + 0.5;
+		
+		float d = (1.0 - length(q - vec2(0.5)));// 2.0;
+		
+		float hilite = clamp(pow(d, 10.0)*1.0, 0.0, 1.0);
+		float circle = clamp(pow(d,  5.0)*3.0, 0.0, 1.0);
+		
+		vec3 matcap = mix(btm, top, 1.0-q.y);
+		matcap = mix(matcap, ctr, circle);
+		matcap = mix(matcap, hlt, hilite);
+		
+		frag.rgb = matcap;
+	}
+	
+	//frag = detailmapN;
+	
  // output
  gl_FragColor = frag;
  //gl_FragColor.rgb = n * 0.5 + 0.5;

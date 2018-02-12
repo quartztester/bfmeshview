@@ -5,21 +5,17 @@ uniform int hasBump;
 uniform mat4 nodetransform[40];
 uniform vec3 eyeposworld;
 uniform vec3 eyevecworld;
-//uniform vec3 sunvecworld;
+uniform vec3 sundirworld;
 
 varying vec2 uv;
 varying vec3 norm;
-varying vec3 eyesurfvec;         // eye to surface vector
+varying vec3 upvec;
 varying vec3 sunvec;
+varying vec3 eyesurfvec;         // eye to surface vector
 varying vec4 boneinfo;
 
 void main()
 {
- //// temp: pass as uniform!
- //vec3 sunvecworld = normalize(vec3(0.5, -0.5, 0.5));
- vec3 sunvecworld = eyevecworld;
- //// temp
- 
  // bone id
  int bone1 = int(gl_Color.r*255.0);
  int bone2 = int(gl_Color.g*255.0);
@@ -47,9 +43,12 @@ void main()
  eyesurfvec = eyeposworld - vert.xyz;
  
  // transform sunvec
- sunvec = (vec4(sunvecworld,0.0) * bonemat).xyz;
+ sunvec = (vec4(sundirworld,0.0) * bonemat).xyz;
  //sunvec = sunvecworld; //// temp!!!
  
+	// up vector
+	upvec = (vec4(0.0, 1.0, 0.0, 0.0) * bonemat).xyz;
+	
  /*
  // tangent
  if (hasBump > 0) {

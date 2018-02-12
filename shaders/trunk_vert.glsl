@@ -27,5 +27,6 @@ void main()
  sunvec = sunvecworld;
  
  // vertex position
- gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+ //gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+ gl_Position = ftransform(); // HACK: fixes face selection overdraw z-fighting
 }

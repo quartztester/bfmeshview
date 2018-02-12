@@ -6,19 +6,24 @@ uniform sampler2D texture1; // normal
 uniform sampler2D texture3; // wreck
 uniform samplerCube envmap; // envmap
 
+uniform int gamma;
+uniform int matcap;
 uniform int hasBump;
 uniform int hasWreck;
 uniform int hasAlpha;
 uniform int hasEnvMap;
 uniform int hasBumpAlpha;
 uniform int showDiffuse;
+uniform int showSpecular;
 uniform int showLighting;
 
-//uniform vec3 sunambient;
-//uniform vec3 sundiffuse;
+uniform vec3 suncolor;
+uniform vec3 skycolor;
+uniform vec3 ambient;
 
 varying vec2 uv;
 varying vec3 norm;
+varying vec3 upvec;
 varying vec3 sunvec;
 varying vec3 eyesurfvec;         // eye to surface vector
 varying vec4 boneinfo;
@@ -29,12 +34,6 @@ varying float debug;
 
 void main()
 {
- //// temp: pass as uniforms
- vec3 sunambient = vec3(0.3,0.3,0.3);
- vec3 sundiffuse = vec3(0.7,0.7,0.7);
- vec3 sunspecular = sundiffuse;
- //// temp
- 
  // base
  vec4 frag = vec4(1.0, 1.0, 1.0, 1.0);
  vec3 spec = vec3(1.0, 1.0, 1.0);
@@ -44,6 +43,9 @@ void main()
  vec4 normalmap = texture2D(texture1, uv);
  vec4 wreckmap = texture2D(texture3, uv);
  
+ //normalmap.r = 1.0 - normalmap.r;
+ //normalmap.g = 1.0 - normalmap.g;
+	
  // vertex normal
  vec3 vertNorm = normalize(norm);
  
@@ -51,15 +53,16 @@ void main()
  if (showDiffuse > 0) {
   frag *= colormap;
  } else {
-  frag.rgb *= 0.75;
+  frag.rgb *= 0.666;
+  frag.a = colormap.a;
  }
  
  // alpha
- if (hasBumpAlpha > 0) {
-  frag.a = normalmap.a;
- } else {
-  frag.a = colormap.a;
- }
+ //if (hasBumpAlpha > 0) {
+ // frag.a = normalmap.a;
+ //} else {
+ // frag.a = colormap.a;
+ //}
  
  // wreck map
  if (hasWreck > 0) {
@@ -75,17 +78,18 @@ void main()
   n = normalize(normalmap.rgb * 2.0 - 1.0);
  } else {
   // vertex normal
-  n = vertNorm;
+  //n = vertNorm;
+		n = vec3(0.0, 0.0, 1.0);
  }
  
  // specular
  if (hasAlpha > 0) {
   if (hasBump > 0) {
-   if (hasBumpAlpha > 0) {
-    spec *= colormap.a;
-   } else {
+   //if (hasBumpAlpha > 0) {
     spec *= normalmap.a;
-   }
+   //} else {
+   // spec *= colormap.a;
+   //}
   }
  } else {
   spec *= colormap.a;
@@ -103,9 +107,11 @@ void main()
  }
  
  // lighting
+	float updot = dot(n,normalize(upvec));
  float NdotL = dot(n,normalize(-sunvec));
+	if (gamma > 0) NdotL = 1.0 - pow(1.0 - NdotL, 2.2);
  if (showLighting > 0) {
-  frag.rgb *= sunambient.rgb + sundiffuse.rgb * max(NdotL,0.0);
+  frag.rgb *= mix(ambient, skycolor, updot*0.5+0.5) + suncolor * max(NdotL,0.0);
  }
  
  // envmap
@@ -118,12 +124,12 @@ void main()
  
  // specular
  if (showLighting > 0) {
-  if (NdotL > 0.0) {
+  //if (NdotL > 0.0) {
    
-   //spec = vec3(1.0, 0.0, 0.0);
+			if (showSpecular == 0) spec = vec3(1.0);
    
    // half vector
-   vec3 hv = normalize( -sunvec + eyesurfvec );
+   vec3 hv = normalize( normalize(-sunvec) + normalize(eyesurfvec) );
    
    // compute specular amount
    float NdotHV = max(dot(n,hv),0.0);
@@ -131,7 +137,7 @@ void main()
    spec *= specPow;
    
    // apply specular
-   frag.rgb += sunspecular * spec;
+   frag.rgb += suncolor * spec;
    
    // glass specular
    if (hasEnvMap > 0) {
@@ -140,13 +146,35 @@ void main()
     }
    }
    
-  }
+  //}
  }
- 
+	
+	if (matcap > 0) {
+		vec3 btm = vec3( 92.0,  19.0,   2.0)/255.0;
+		vec3 top = vec3(131.0,  62.0,  47.0)/255.0;
+		vec3 ctr = vec3(138.0,  42.0,  20.0)/255.0;
+		vec3 hlt = vec3(209.0, 156.0, 162.0)/255.0;
+		
+  //vec3 reflected = reflect(normalize(eyesurfvec), normalize(n) );
+		vec3 reflected = reflect(normalize( eyepos - fragpos ), vertNorm);
+  float m = 2.8284271247461903 * sqrt( reflected.z+1.0 ); //sqrt(8.0)
+  vec2 q = reflected.xy / m + 0.5;
+		//q = uv;
+		
+		q = reflected.xy + 0.5;
+		
+		float d = (1.0 - length(q - vec2(0.5)));// 2.0;
+		
+		float hilite = clamp(pow(d, 10.0)*1.0, 0.0, 1.0);
+		float circle = clamp(pow(d,  5.0)*3.0, 0.0, 1.0);
+		
+		vec3 matcap = mix(btm, top, 1.0-q.y);
+		matcap = mix(matcap, ctr, circle);
+		matcap = mix(matcap, hlt, hilite);
+		
+		frag.rgb = matcap;
+	}
+	
  // output
  gl_FragColor = frag;
- 
- //gl_FragColor = vec4(vec3(normalize( eyepos - fragpos )),1.0);
- //gl_FragColor = vec4(vertNorm*0.5+0.5,1.0);
- //gl_FragColor.rgb = vec3(debug * 0.5 + 0.5);
 }
