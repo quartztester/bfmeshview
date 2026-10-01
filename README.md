@@ -49,6 +49,33 @@ BfMeshView is Free Open Source software! The source code is included in the down
   resizing. If the app won't start, drop the bundled (or `docs/runtimes.zip`) DLL/OCX
   runtimes next to the executable.
 
+## Screenshots
+
+BfMeshView viewing Battlefield meshes, materials, UVs and animations — screenshots from the original bytehazard.com page.
+
+<table>
+  <tr>
+    <td><img src="screenshots/screen7.jpg" alt="BfMeshView screenshot 7" width="480" /></td>
+    <td><img src="screenshots/screen8.jpg" alt="BfMeshView screenshot 8" width="480" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/screen9.jpg" alt="BfMeshView screenshot 9" width="480" /></td>
+    <td><img src="screenshots/screen1.jpg" alt="BfMeshView screenshot 1" width="480" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/screen2.jpg" alt="BfMeshView screenshot 2" width="480" /></td>
+    <td><img src="screenshots/screen3.jpg" alt="BfMeshView screenshot 3" width="480" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/screen4.jpg" alt="BfMeshView screenshot 4" width="480" /></td>
+    <td><img src="screenshots/screen5.jpg" alt="BfMeshView screenshot 5" width="480" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/screen6.jpg" alt="BfMeshView screenshot 6" width="480" /></td>
+    <td><img src="screenshots/screen10.jpg" alt="BfMeshView screenshot 10" width="480" /></td>
+  </tr>
+</table>
+
 ## Release history
 
 | Version | Date | Summary | Tag |
